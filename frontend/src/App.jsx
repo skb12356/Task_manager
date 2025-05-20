@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddMemberForm from "./components/AddMemberForm";
+import RegisterCompanyForm from "./components/RegisterCompanyForm"
 
 function Logout() {
   localStorage.clear();
@@ -41,6 +42,7 @@ function App() {
         <Route path="/register" element={<RegisterAndLogout />} />
         <Route path="/home" element={<Home />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/register-company" element={<RegisterCompanyForm />} />
       </Routes>
     </BrowserRouter>
   );

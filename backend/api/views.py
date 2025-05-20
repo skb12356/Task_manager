@@ -4,9 +4,9 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from .models import Member ,Project,ChatMessage
-from .serializers import MemberSerializer,UserSerializer,ProjectSerializer,ChatMessageSerializer
+from .serializers import MemberSerializer,UserSerializer,ProjectSerializer,ChatMessageSerializer,CompanyRegistrationSerializer
 from django.db import IntegrityError
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -106,29 +106,28 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 class CookieLoginView(APIView):
-    permission_classes=[AllowAny]
+    permission_classes = [AllowAny]
+
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
 
         user = authenticate(username=username, password=password)
-        if user is None:
+        if not user:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # ✅ Only allow login if user is a registered Member
+        # Only allow members to log in
         if not Member.objects.filter(user=user).exists():
             return Response({'error': 'Not authorized as a registered member'}, status=status.HTTP_403_FORBIDDEN)
 
         refresh = RefreshToken.for_user(user)
 
         response = Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
-
-        # ✅ Set tokens as HttpOnly cookies
         response.set_cookie(
             key='access_token',
             value=str(refresh.access_token),
             httponly=True,
-            secure=False,           # use False only in local dev
+            secure=False,  # Set to True in production
             samesite='Lax'
         )
         response.set_cookie(
@@ -142,8 +141,8 @@ class CookieLoginView(APIView):
         return response
 
 class ProtectedMemberView(APIView):
-    permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         return Response({"message": f"Welcome, {request.user.username}!"})
     
@@ -159,7 +158,47 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     serializer_class = ChatMessageSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+class CompanyRegistrationView(APIView):
+    def post(self, request):
+        serializer = CompanyRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Company registered successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+class CookieTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+
+        if refresh_token is None:
+            return Response({"detail": "Refresh token not provided"}, status=400)
+
+        request.data['refresh'] = refresh_token
+        response = super().post(request, *args, **kwargs)
+
+        # Set new access token in cookie
+        if response.status_code == 200:
+            access_token = response.data['access']
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                httponly=True,
+                samesite='Lax',
+                secure=False,
+            )
+            del response.data['access']
+
+        return response
+class LogoutView(APIView):
+    def post(self, request):
+        response = Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
+        # Delete the JWT cookies by setting empty values and expiry in the past
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
 # class CookieProtectedView(APIView):
 #     def get(self, request):
 #         raw_token = request.COOKIES.get("access_token")

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "../styles/Form.css";
 import LoadingIndicator from "./LoadingIndicator";
+import { fetchWithRefresh } from "../fetchWithRefresh";
 
 function Form({ method, onSuccess }) {
     const [username, setUsername] = useState("");
@@ -16,7 +17,7 @@ function Form({ method, onSuccess }) {
         setError(null);
 
         try {
-            const response = await fetch("http://localhost:8000/api/cookie-login/", {
+            const response = await fetchWithRefresh("http://localhost:8000/api/cookie-login/", {
                 method: "POST",
                 credentials: "include",
                 headers: {

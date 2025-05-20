@@ -175,5 +175,9 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': False,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_SAMESITE': 'Lax',
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # or longer
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+from datetime import timedelta
 

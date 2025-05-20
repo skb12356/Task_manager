@@ -12,8 +12,9 @@ class Member(models.Model):
 
 
 class Company(models.Model):
+    company_id = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
-    # You can add other company fields like address, contact, etc. as needed.
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='owned_company')
 
     def __str__(self):
         return self.name
