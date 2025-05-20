@@ -87,7 +87,7 @@ const AddMemberForm = () => {
 
 // Add this function if you need CSRF token
 async function getCsrfToken() {
-  const response = await axios.get('http://localhost:8000/api/csrf_token/');
+  const response = await axios.get('http://localhost:8000/api/csrf_token/',{withCredentials:true});
   return response.data.csrfToken;
 }
 

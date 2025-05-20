@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
-from .models import Member
-from .serializers import MemberSerializer,UserSerializer
+from .models import Member ,Project,ChatMessage
+from .serializers import MemberSerializer,UserSerializer,ProjectSerializer,ChatMessageSerializer
 from django.db import IntegrityError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -15,7 +15,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .authentication import CookieJWTAuthentication
-
+from rest_framework import viewsets
 
 
 class MemberCreateList(APIView):
@@ -146,6 +146,19 @@ class ProtectedMemberView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     def get(self, request):
         return Response({"message": f"Welcome, {request.user.username}!"})
+    
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class ChatMessageViewSet(viewsets.ModelViewSet):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
 # class CookieProtectedView(APIView):
 #     def get(self, request):
